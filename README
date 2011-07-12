@@ -1,0 +1,173 @@
+{\rtf1\mac\ansicpg10000\cocoartf824\cocoasubrtf480
+{\fonttbl\f0\fswiss\fcharset77 Helvetica;\f1\fswiss\fcharset77 Helvetica-Bold;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww9000\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\ql\qnatural\pardirnatural
+
+\f0\fs24 \cf0 THIS IS THE README OF THE IDL DM_RECON LIBRARY\
+\
+CONTENTS:\
+\
+	1. Overview of the dm_recon routines\
+	2. Important conventions regarding the library\
+		2.1. Naming the routine\
+		2.2. Naming the variables\
+		2.3. Sorting input and output variables	\
+		2.4. Overwriting existing files	\
+		2.5. Comments that make sense!\
+		2.6. Functions with several output variables\
+		2.7. Modifying routines, adding new routines\
+\
+\
+1.) OVERVIEW of the 
+\f1\b dm_recon
+\f0\b0  routines  \
+\
+The 
+\f1\b dm_recon 
+\f0\b0 archive contains various different routines dealing with \
+aspects of data tweaking before, during or after a reconstruction. It does \
+
+\f1\b NOT 
+\f0\b0 contain an actual reconstruction code. File input output is done using \
+the HDF5 library routines in /diffmic/idl/util/. Here is a list of actions that \
+can be performed with functions from this library:\
+\
+-	calculate autocorrelations\
+-	crop an adi array\
+- 	define an initial support\
+-	update an existing support\
+- 	high-pass filter\
+- 	calculate PRTF\
+-	remove phase ramps\
+-	set global phase\
+-	apply shrinkwrap\
+- 	array centering\
+\
+Each file should be appropriately named to reveal its purpose. Each \
+function should also display a help message, just type the function name\
+on the command line to display it. \
+\
+2.) 
+\f1\b IMPORTANT
+\f0\b0  CONVENTIONS \
+\
+All present files and all future files that will be added by someone should\
+stick to the following conventions:\
+\
+2.1) Naming the routine\
+\
+	There are 2 types of routines. Routines that read data from files and \
+	write data to files, and functions that perform operations on arrays but \
+	don't perform any file input/output operations.\
+\
+	To keep it modular, each 
+\f1\b task
+\f0\b0  at hand, e.g. cropping an adi array, should \
+	be split up in a wrapper 
+\f1\b procedure
+\f0\b0  that handles the file-I/O and one \
+	
+\f1\b function
+\f0\b0  that only acts on the data. \
+	The 
+\f1\b procedure
+\f0\b0  will be called \
+			
+\f1\b dm_task
+\f0\b0 \
+	and the 
+\f1\b function
+\f0\b0  will be called \
+			
+\f1\b dm_do_task
+\f0\b0 \
+	In the example of cropping the adi array one would have the wrapper \
+	procedure   
+\f1\b dm_crop_adi
+\f0\b0   which will open an .h5 file and read its contents\
+	and then hand over the contents to the function  
+\f1\b dm_do_crop_adi
+\f0\b0   to perform \
+	the actual cropping. The function hands back the cropped adi array to the \
+	wrapper procedure which will write it to disk again.\
+\
+2.2) Naming the variables\
+\
+	Variable names should be descriptive, so that one knows what the routine \
+	does even without a lot of 	commenting. If applicable the variable name \
+	should always include the unit of the quantity it describes, e.g.\
+		ccd_z_microns, frequency_inverse_microns\
+	\
+2.3) Sorting input and output variables\
+\
+	Each routine will have its arguments sorted in the following way\
+		-	input filename or array 	\
+			(for procedures or functions respectively)\
+		-	further input variables, if applicable sort .h5 datasets in the \
+			following order /adi, /spt, /itn\
+		-	any output variables \
+		-	keywords\
+\
+2.4) Overwriting existing files\
+	\
+	By default, any procedure that modifies an .h5 file should \
+	create a new .h5 file instead of overwriting the input file. \
+	\
+	The routine will offer a default filename for the new file by \
+	appending a string to the input filename. Optionally the \
+	user can provide a desired output name by providing an \
+	output filename with the
+\f1\b  /new_name
+\f0\b0  keyword.\
+\
+	Note, that it is then possible to overwrite the input file by \
+	choosing 
+\f1\b new_name = input_filename.\
+\
+	NOTE: 
+\f0\b0 the routine has to make sure to copy any existing \
+	unmodified datasets to the new file!!! For instance, if a high-\
+	pass filter is performed on the itn_array, then the routine should\
+	also save the /adi, the /ainfo and the /comments group to the 	new file. Take care to append new comments to existing comments\
+\
+		\
+2.5) Comments that make sense!\
+	\
+	Any procedure that modifies and .h5 file should leave an appropriate \
+	comment in the comment structure. It should be formatted as follows\
+\
+	DM_TASK, systime(): additional comments if applicable\
+\
+	where dm_task is the name of the routine at hand and systime is \
+	the output of IDLs systime() function.\
+\
+\
+2.6) Functions with several output variables\
+	\
+	Functions that modify several arrays, e.g. cropping adi and adi_error \
+	array will also have several output variables. In order to stick to the \
+	convention not to overwrite input variables, it is best to have these \
+	functions return a structure of output variables, e.g.\
+\
+	cropped_arrays = dm_do_crop_adi(adi_array, adi_error_array)\
+\
+	where cropped_arrays = \{adi:adi_array, error:adi_error_array\}\
+\
+2.7) Modifying routines, adding new routines\
+\
+	New routines must stick to all conventions outlined above. This\
+	includes using HDF5 as file format unless it really doesn't make sense.\
+	\
+	If you modify existing routines, make sure you don't take any \
+	previous functionality away and
+\f1\b  test your changes thoroughly!\
+\
+	
+\f0\b0 Document all changes in the section 'Modification history' of \
+	the header of the file indicating your initials so we can track 	you down if things don't work anymore.\
+\
+\
+\
+\
+}
